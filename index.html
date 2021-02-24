@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vargi-Bots</title>
+ <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin=""
+  	/>
+
+  	<script
+    src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    crossorigin=""
+  	></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<header>
+    
+</header>
+<body>
+
+<div id="map" style="height: 380px"></div>
+
+<br>
+<div id="column_chart" style="width: 100%; height: 400px;"></div>
+<br>    
+    
+        <hr style="height:4px;border-width:0;color:gray;background-color:gray">
+   	
+   		<center><table id="table1" border='1' style="width:100%;">
+            <tr>
+                <th>Order ID</th>
+                <th>Item</th>
+                <th>Priority</th>
+                
+                <th>City</th>
+                <th>Dispatched</th>
+                <th>Shipped</th>
+		<th>Order Date and Time</th>
+		<th>Dispatch Date and Time</th>
+        <th>Shipping Date and Time</th>
+		<th>Time Taken</th>
+            </tr>
+            <tbody id="tableContent">
+            </tbody>
+        </table></center>
+
+        <hr style="height:4px;border-width:0;color:gray;background-color:gray">
+<br> 
+
+</body>
+
+
+
+<script>
+    /////////////Ajax Requests////////////
+    var jsonDataObject=new Array();
+    
+  
+    $(document).ready(function() {
+        // Fetch the initial table
+    
+    
+    
+    refreshTable();    
+    	refreshMap();
+    
+        // Fetch every 5 second
+        
+        // Fetch every 1 second
+        
+// Fetch the initial Chart
+    refreshChart();
+    
+    // Fetch every 5 second
+setInterval(refreshTable, 1000);
+setInterval(refreshMap, 5000);
+    setInterval(refreshChart, 5000);
+
+    });
+    
+    function refreshTable(){
+        
+        // var trHTML = '';	    
+        
+        $.getJSON('https://spreadsheets.google.com/feeds/list/1SSwMHgCJQNwOnyJCj0ZAdYtkmDiupL-3mQLvW66YW9A/4/public/full?alt=json', function(data) {
+        
+          var jsonDataObject=[];
+          for (var i = 0; i < data.feed.entry.length; ++i) {
+
+            var json_data = {
+                "City": data.feed.entry[i].gsx$city.$t,
+                "OrderID" : data.feed.entry[i].gsx$orderid.$t,
+                "Item" : data.feed.entry[i].gsx$item.$t,
+                "Priority" : data.feed.entry[i].gsx$priority.$t,
+                "Dispatched":data.feed.entry[i].gsx$dispatchstatus.$t,
+                "Shipped":data.feed.entry[i].gsx$shippedstatus.$t,
+                "Latitude": parseFloat(data.feed.entry[i].gsx$latitude.$t),
+                "Longitude": parseFloat(data.feed.entry[i].gsx$longitude.$t),
+		"TimeTaken": parseFloat(data.feed.entry[i].gsx$timetaken.$t),
+    "OrderTime":data.feed.entry[i].gsx$orderdateandtime.$t,
+    "DispatchTime":data.feed.entry[i].gsx$dispatchdateandtime.$t,
+    "ShippedTime":data.feed.entry[i].gsx$shippeddateandtime.$t,
+    
+
+            };
+            jsonDataObject.push(json_data);
+    }
+    function check(value){
+      if(isNaN(value)){
+        return "";
+      }
+      else
+      return value;
+    }
+            	var trHTML = '';
+
+            	for (var i = 0; i < jsonDataObject.length; ++i) {
+                	var myData_map, myData_order;
+                  
+                    trHTML += '<tr><td>' + jsonDataObject[i].OrderID + 
+                        	  '</td><td>' + jsonDataObject[i].Item + 
+                        	  '</td><td>' + jsonDataObject[i].Priority +
+                            '</td><td>' + jsonDataObject[i].City + 
+                            '</td><td>' + jsonDataObject[i].Dispatched +
+                            '</td><td>' + jsonDataObject[i].Shipped + 
+                        	  '</td><td>' + jsonDataObject[i].OrderTime + 
+                        	  '</td><td>'  + jsonDataObject[i].DispatchTime +
+				  '</td><td>'  + jsonDataObject[i].ShippedTime +
+          '</td><td>'  + check(jsonDataObject[i].TimeTaken) + 
+				
+				
+                        	  '</td></tr>';
+
+                }
+
+                console.log(trHTML);
+        		$('#tableContent').html(trHTML);
+        		var trHTML = '';
+            
+
+        	});	 
+    }	
+
+function refreshMap(jsonDataObject){
+        var jsonDataObject=[]
+        $.getJSON('https://spreadsheets.google.com/feeds/list/1SSwMHgCJQNwOnyJCj0ZAdYtkmDiupL-3mQLvW66YW9A/4/public/full?alt=json', function(data) {
+    var container = L.DomUtil.get('map');
+
+      	if(container != null){
+        container._leaflet_id = null;
+        }
+   var map = L.map('map').setView([20.5937, 78.9629], 4);
+     
+    
+    for (var i = 0; i < data.feed.entry.length; ++i) {
+
+            var json_data = {
+                "City": data.feed.entry[i].gsx$city.$t,
+                "OrderID" : data.feed.entry[i].gsx$orderid.$t,
+                "Item" : data.feed.entry[i].gsx$item.$t,
+                "Priority" : data.feed.entry[i].gsx$priority.$t,
+                "Dispatched":data.feed.entry[i].gsx$dispatchstatus.$t,
+                "Shipped":data.feed.entry[i].gsx$shippedstatus.$t,
+                "Latitude": parseFloat(data.feed.entry[i].gsx$latitude.$t),
+                "Longitude": parseFloat(data.feed.entry[i].gsx$longitude.$t),
+		"TimeTaken": parseFloat(data.feed.entry[i].gsx$timetaken.$t),
+    "OrderTime":data.feed.entry[i].gsx$orderdateandtime.$t,
+    "DispatchTime":data.feed.entry[i].gsx$dispatchdateandtime.$t,
+    "ShippedTime":data.feed.entry[i].gsx$shippeddateandtime.$t,
+    
+
+            };
+            jsonDataObject.push(json_data);
+    }
+    
+    
+        
+         
+        
+        
+
+            for (var j = 0; j < jsonDataObject.length ; j++) {
+                var marker = L.marker(L.latLng(parseFloat(jsonDataObject[j].Latitude), parseFloat(jsonDataObject[j].Longitude)));
+                
+                marker.bindPopup(jsonDataObject[j].City, {
+                        autoClose: false
+                });
+                map.addLayer(marker);
+                // value for red
+                if(jsonDataObject[j].Dispatched=="YES" && jsonDataObject[j].Shipped=="")
+                marker.valueOf()._icon.style.filter = 'saturate(100%) hue-rotate(150deg) contrast(200%)';
+                
+                // value for green
+                else if(jsonDataObject[j].Dispatched=="YES" && jsonDataObject[j].Shipped=="YES")
+                marker.valueOf()._icon.style.filter = 'hue-rotate(250deg)'
+
+                //value for yellow
+                else if(jsonDataObject[j].Dispatched=="" && jsonDataObject[j].Shipped==""){
+                marker.valueOf()._icon.style.filter = 'saturate(12) hue-rotate(202deg) contrast(250%)';
+                }
+               
+
+
+                marker.on('click', onClick_Marker)
+                // Attach the corresponding JSON data to your marker:
+                marker.myJsonData =jsonDataObject[j];
+                
+                function onClick_Marker(e) {
+                        var marker = e.target;
+                        var orderid=marker.myJsonData.OrderID;
+                        var dispatched=marker.myJsonData.Dispatched;
+                        var shipped=marker.myJsonData.Shipped;
+                        if(dispatched===""){
+                          dispatched="NO";
+                        }
+                        else{
+                          dispatched="YES";
+                        }
+                        if(shipped===""){
+                          shipped="NO";
+                        }
+                        else{
+                          shipped="YES";
+                        }
+                    
+                        popup = L.popup()
+                        .setLatLng(marker.getLatLng())
+                        .setContent("Order ID: " + orderid + " || Dispatched: " +   dispatched+" || Shipped: "+shipped)
+                        .openOn(map);
+                    }
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map); 
+                    
+
+                }
+                
+                
+                }
+        
+    );
+                
+}
+
+        
+
+
+google.charts.load("current", {packages:['corechart']});
+  google.charts.setOnLoadCallback(refreshChart);
+
+  function refreshChart(jsonDataObject){
+    var jsonDataObject =[];
+    var graph_arr = [['Order ID', 'Time Taken', { role: 'style' }]];
+    var bar_color = [];
+    $.getJSON('https://spreadsheets.google.com/feeds/list/1SSwMHgCJQNwOnyJCj0ZAdYtkmDiupL-3mQLvW66YW9A/4/public/full?alt=json', function(data) {
+      
+  
+      for (var i = 0; i < data.feed.entry.length; ++i) {
+        var json_data = {
+          "OrderID" : data.feed.entry[i].gsx$orderid.$t,
+          "TimeTaken": parseFloat(data.feed.entry[i].gsx$timetaken.$t),
+          "Priority": data.feed.entry[i].gsx$priority.$t
+          };
+          jsonDataObject.push(json_data);
+      };
+      // Setting color for the coloumns of graph according to priority of items
+      for(var j in jsonDataObject){
+        if(jsonDataObject[j].Priority == 'HP'){
+          var color =  '#FF0000';
+          }
+        else if(jsonDataObject[j].Priority == 'MP'){
+          var color =  '#FFFF00';
+          }
+        else if(jsonDataObject[j].Priority == 'LP'){
+          var color =  '#00FF00';
+          }
+        bar_color.push(color)
+      }
+
+      // Converting Json Object to JavaScript Array
+      for(var j in jsonDataObject){
+          graph_arr.push([jsonDataObject[j].OrderID,jsonDataObject[j].TimeTaken, bar_color[j]]);
+      }
+      var graphArray_Final = google.visualization.arrayToDataTable(graph_arr);
+    
+      var data = new google.visualization.DataView(graphArray_Final); 
+
+      var options = {
+        title: 'Time Taken for items to be Shipped',
+        hAxis: { title: 'Order ID'},
+        vAxis: { title: 'Time Taken (min)'},
+        legend: { position: "none" },
+
+      };
+      var chart = new google.visualization.ColumnChart(document.getElementById('column_chart'));
+      chart.draw(data, options);
+    }
+    
+    );	 
+  }
+
+ 
+    
+</script>
+</html>
